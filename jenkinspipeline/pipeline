@@ -1,0 +1,12 @@
+#Creating jenkins pipeline:
+
+create job-> add name-> select pipeline->ok
+
+#Adding credentials:
+
+Jenkins dashboard->manage jenkins-> credentials->system->global credentials 
+add AWS_ACESS_KEY_ID and AWS_ACESS_SECRET_ID
+
+#Installing stageview plugin:
+
+Jenkins dashboard->manage jenkins-> plugins->stage view ->install

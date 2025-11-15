@@ -1,0 +1,68 @@
+pipeline {
+    agent any
+
+    environment {
+        AWS_ACCESS_KEY_ID     = credentials('AWS_ACCESS_KEY_ID')
+        AWS_SECRET_ACCESS_KEY = credentials('AWS_ACCESS_SECRET_KEY')
+        AWS_DEFAULT_REGION    = "us-east-1"
+    }
+
+    stages {
+
+        stage('Checkout SCM') {
+            steps {
+                checkout scmGit(
+                    branches: [[name: '*/main']],
+                    extensions: [],
+                    userRemoteConfigs: [[url: 'https://github.com/Vinitha-Arun-max/eks-cluster-project']]
+                )
+            }
+        }
+
+        stage('Initializing Terraform') {
+            steps {
+                dir('ekscluster') {
+                    sh 'terraform init'
+                }
+            }
+        }
+
+        stage('Validating Terraform') {
+            steps {
+                dir('ekscluster') {
+                    sh 'terraform validate'
+                }
+            }
+        }
+
+        stage('Terraform Plan') {
+            steps {
+                script {
+                    dir('ekscluster') {
+                        sh 'terraform plan -var-file=dev.tfvars'
+                    }
+
+                    // Ask user if they want to proceed
+                    input(message: "Proceed with Terraform apply/destroy?", ok: "Proceed")
+                }
+            }
+        }
+
+        stage('Creating/Destroying EKS Cluster') {
+            steps {
+                script {
+                    // Expect action from Jenkins parameter (apply or destroy)
+                    if (!env.action) {
+                        error("ERROR: 'action' parameter not provided. Set it as apply or destroy.")
+                    }
+
+                    dir('ekscluster') {
+                        sh "terraform ${action} -var-file=dev.tfvars -auto-approve"
+                    }
+                }
+            }
+        }
+
+    }
+}
+
